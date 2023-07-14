@@ -4,10 +4,10 @@ defmodule Usweather.XmlParser do
   defrecord :eliXmlElement, extract(:xmlElement, from_lib: "xmerl/include/xmerl.hrl")
   defrecord :eliXmlText, extract(:xmlText, from_lib: "xmerl/include/xmerl.hrl")
 
-  def stations_index(xml) do
+  def stations_index(xml, state_code) do
     xml
     |> parse_xml()
-    |> extract_stations_index()
+    |> extract_stations(state_code)
   end
 
   def latest_weather_report(xml) do
@@ -21,37 +21,39 @@ defmodule Usweather.XmlParser do
     doc
   end
 
-  def extract_stations_index(xml) do
+  def extract_stations(xml, state_code) do
     # The structure of the XML document is as follows: under the root tag
     # <wx_station_index>, there are a number of <station> tags.
     # Each <station> tag of the XML document contains the following tags:
     # <station_id>, <state>, <station_name>
-    # We want to extract the text of all these tags, and return a list of
-    # tuples where each tuple contains the station_id, state and station_name text
-
+    # We want to extract the content (i.e. text) of all <station_id> and
+    # <station_name> tags, but only if the <state> tag matches the given state_code,
+    # and return them in a list of tuples.
     list_of_station_ids =
       :xmerl_xpath.string('/wx_station_index/station/station_id/text()', xml)
-      |> Enum.map(fn text -> eliXmlText(text, :value) end)
+      |> Enum.map(fn text -> eliXmlText(text, :value) |> to_string() end)
 
     list_of_states =
       :xmerl_xpath.string('/wx_station_index/station/state/text()', xml)
-      |> Enum.map(fn text -> eliXmlText(text, :value) end)
+      |> Enum.map(fn text -> eliXmlText(text, :value) |> to_string() end)
 
     list_of_station_names =
       :xmerl_xpath.string('/wx_station_index/station/station_name/text()', xml)
-      |> Enum.map(fn text -> eliXmlText(text, :value) end)
+      |> Enum.map(fn text -> eliXmlText(text, :value) |> to_string() end)
 
-    Enum.zip([list_of_station_ids, list_of_states, list_of_station_names])
+    complete_list = Enum.zip([list_of_station_ids, list_of_states, list_of_station_names])
+
+    # now we can filter to get the result we want
+    Enum.filter(complete_list, fn {_, state, _} -> state == state_code end)
   end
 
   def extract_weather_report(xml) do
     # The structure of the XML document is as follows: under the root tag
-    # <current_observation>, there are a number of tags from which we are interested
+    # <current_observation> there are a number of tags, from which we are interested
     # in the following: <location>, <station_id>, <observation_time>, <weather>,
     # <temperature_string>, <relative_humidity>, <wind_string>, <pressure_string>,
     # <dewpoint_string>, <visibility_mi>
     # We want to extract the text of all these tags, and return them in a list of tuples.
-
     list_of_tags = [
       "location",
       "station_id",
@@ -68,9 +70,17 @@ defmodule Usweather.XmlParser do
     report =
       for tag <- list_of_tags do
         :xmerl_xpath.string('/current_observation/#{tag}/text()', xml)
-        |> Enum.map(fn text -> eliXmlText(text, :value) end)
+        |> Enum.map(fn text -> eliXmlText(text, :value) |> to_string() end)
       end
 
+    # now each element of the list is a list with one string element,
+    # so we can build a list of strings by extracting the first element of each list
+    report =
+      for elem <- report do
+        elem |> List.first()
+      end
+
+    # finally, we can zip the two lists together to build the list of tuples
     Enum.zip([list_of_tags, report])
   end
 end

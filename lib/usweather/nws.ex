@@ -1,9 +1,8 @@
 defmodule Usweather.NWS do
-  @headers [
-    {"User-agent", "theweatherapp.com contact@theweatherapp.com"},
-    {"Accept", "application/vnd.noaa.obs+xml"}
-  ]
-  @nws_index_url "https://w1.weather.gov/xml/current_obs/index.xml"
+  # use a module attribute to fetch the value at compile time
+  @headers Application.compile_env(:usweather, :headers)
+  @nws_stations_url Application.compile_env(:usweather, :nws_stations_url)
+  @nws_api_url Application.compile_env(:usweather, :nws_api_url)
 
   def fetch(which_page) do
     get_page_url(which_page)
@@ -11,16 +10,16 @@ defmodule Usweather.NWS do
     |> handle_response(which_page)
   end
 
-  def get_page_url(:index),
-    do: @nws_index_url
+  def get_page_url({:index, _state_code}),
+    do: @nws_stations_url
 
   def get_page_url(station_id),
-    do: "https://api.weather.gov/stations/#{station_id}/observations/latest"
+    do: "#{@nws_api_url}/stations/#{station_id}/observations/latest"
 
-  def handle_response({_, %{status_code: status_code, body: body}}, :index) do
+  def handle_response({_, %{status_code: status_code, body: body}}, {:index, state_code}) do
     {
       status_code |> check_for_error(),
-      body |> Usweather.XmlParser.stations_index()
+      body |> Usweather.XmlParser.stations_index(state_code)
     }
   end
 

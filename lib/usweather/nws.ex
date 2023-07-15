@@ -1,9 +1,16 @@
 defmodule Usweather.NWS do
+  @moduledoc """
+  Handles the fetching of the weather information from the US National Weather Service (https://www.weather.gov/documentation/services-web-api)
+  """
   # use a module attribute to fetch the value at compile time
   @headers Application.compile_env(:usweather, :headers)
   @nws_stations_url Application.compile_env(:usweather, :nws_stations_url)
   @nws_api_url Application.compile_env(:usweather, :nws_api_url)
 
+  @doc """
+  `which_page` can be a tuple `{:index, state_code}` or a string representing a station_id.
+  Fetches the page corresponding to `which_page` and returns a tuple `{status_code, body}`.
+  """
   def fetch(which_page) do
     get_page_url(which_page)
     |> HTTPoison.get(@headers)

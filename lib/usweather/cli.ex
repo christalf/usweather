@@ -1,6 +1,6 @@
 defmodule Usweather.CLI do
   @moduledoc """
-  Handles the command line parsing and the dispatch to the various functions that end up generating a table showing the latest weather information given by the US National Weather Service (https://www.weather.gov/documentation/services-web-api) for the station_id issued as the command argument (or a table showing the list of the available station_ids in a required state if the command is issued with the -h or --help options and the state_code given as argument)
+  Handles the command line parsing and the dispatch to the various functions that end up generating a table showing the latest weather information given by the US National Weather Service (https://www.weather.gov/documentation/services-web-api) for the station_id issued as the command argument (or a table showing the list of the available station_ids in a required state if the command is issued with the -h or --help options followed by the state_code given as argument)
   """
   def run(argv) do
     argv
@@ -48,6 +48,7 @@ defmodule Usweather.CLI do
     # deal with a possible error response from the fetch,
     # show the parsed information otherwise
     |> decode_response()
+    |> Usweather.Formatter.print_table_for_columns(["station_id", "state", "name"])
   end
 
   def process(station_id) do
@@ -56,10 +57,22 @@ defmodule Usweather.CLI do
     # deal with a possible error response from the fetch,
     # show the parsed information otherwise
     |> decode_response()
+    |> Usweather.Formatter.print_table_for_rows([
+      "location",
+      "station_id",
+      "observation_time",
+      "weather",
+      "temperature_string",
+      "relative_humidity",
+      "wind_string",
+      "pressure_string",
+      "dewpoint_string",
+      "visibility_mi"
+    ])
   end
 
   def decode_response({:ok, body}) do
-    body |> IO.inspect()
+    body
   end
 
   def decode_response({:error, error_body}) do

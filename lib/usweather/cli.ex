@@ -1,8 +1,8 @@
 defmodule Usweather.CLI do
   @moduledoc """
-  Handles the command line parsing and the dispatch to the various functions that end up generating a table showing the latest weather information given by the US National Weather Service (https://www.weather.gov/documentation/services-web-api) for the station_id issued as the command argument (or a table showing the list of the available station_ids in a required state if the command is issued with the -h or --help options followed by the state_code given as argument)
+  Handles the command line parsing and the dispatch to the various functions that end up generating a table showing the latest weather information given by the US National Weather Service (https://www.weather.gov/documentation/services-web-api) for the station_id issued as the command argument (or a table showing the list of the available station_ids within the required state, if the command is issued with the -h or --help options followed by the state_code given as argument)
   """
-  def run(argv) do
+  def main(argv) do
     argv
     |> parse_args()
     |> process()

@@ -31,20 +31,28 @@ defmodule Usweather.NWS do
     Logger.info("Got response: status_code=#{status_code}")
     Logger.debug(fn -> inspect(body) end)
 
-    {
-      status_code |> check_for_error(),
+    decode_response = status_code |> check_for_error()
+
+    if decode_response == :ok do
       body |> Usweather.XmlParser.stations_index(state_code)
-    }
+    else
+      IO.puts("Error fetching from US National Weather Service: #{body}")
+      System.halt(2)
+    end
   end
 
   def handle_response({_, %{status_code: status_code, body: body}}, _station_id) do
     Logger.info("Got response: status_code=#{status_code}")
     Logger.debug(fn -> inspect(body) end)
 
-    {
-      status_code |> check_for_error(),
+    decode_response = status_code |> check_for_error()
+
+    if decode_response == :ok do
       body |> Usweather.XmlParser.latest_weather_report()
-    }
+    else
+      IO.puts("Error fetching from US National Weather Service: #{body}")
+      System.halt(2)
+    end
   end
 
   def check_for_error(200), do: :ok

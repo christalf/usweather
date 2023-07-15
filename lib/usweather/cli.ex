@@ -26,13 +26,15 @@ defmodule Usweather.CLI do
     |> args_to_internal_representation()
   end
 
-  def args_to_internal_representation({[help: true], state_code, []}) do
-    {:help, Enum.join(state_code)}
+  def args_to_internal_representation({[help: true], state_code, []})
+      when length(state_code) == 1 do
+    {:help, state_code |> Enum.join() |> String.upcase()}
   end
 
-  def args_to_internal_representation({[], station_id, []}) do
+  def args_to_internal_representation({[], station_id, []})
+      when length(station_id) == 1 do
     # return station_id converted from a list of chars to a string
-    Enum.join(station_id)
+    station_id |> Enum.join() |> String.upcase()
   end
 
   def args_to_internal_representation(_), do: :badcmd
@@ -45,18 +47,22 @@ defmodule Usweather.CLI do
   def process({:help, state_code}) do
     # fetch the list of all the available station_ids in the given state_code
     Usweather.NWS.fetch({:index, state_code})
-    # deal with a possible error response from the fetch,
-    # show the parsed information otherwise
-    |> decode_response()
+    # if a successful response is given by the National Weather Service, the fetch
+    # function parses it and returns a list of keyword lists, where each keyword list
+    # has the keys :station_id, :state, :name and the values are the text of the tags.
+    # The Formatter module prints the list of keyword lists in a table.
     |> Usweather.Formatter.print_table_for_columns(["station_id", "state", "name"])
   end
 
   def process(station_id) do
     # fetch the weather information for the given station_id
     Usweather.NWS.fetch(station_id)
-    # deal with a possible error response from the fetch,
-    # show the parsed information otherwise
-    |> decode_response()
+    # if a successful response is given by the National Weather Service, the fetch
+    # function parses it and returns a keyword list, where the keys are the names of
+    # the tags (i.e., :location, :station_id, :observation_time, :weather,
+    # temperature_string, :relative_humidity, :wind_string, :pressure_string,
+    # :dewpoint_string and :visibility_mi ), and the values are the text of the tags.
+    # The Formatter module prints the keyword list in a table.
     |> Usweather.Formatter.print_table_for_rows([
       "location",
       "station_id",
@@ -69,14 +75,5 @@ defmodule Usweather.CLI do
       "dewpoint_string",
       "visibility_mi"
     ])
-  end
-
-  def decode_response({:ok, body}) do
-    body
-  end
-
-  def decode_response({:error, error_body}) do
-    IO.puts("Error fetching from US National Weather Service: #{error_body}")
-    System.halt(2)
   end
 end

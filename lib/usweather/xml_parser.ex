@@ -57,16 +57,27 @@ defmodule Usweather.XmlParser do
     complete_list = Enum.zip([list_of_station_ids, list_of_states, list_of_station_names])
 
     # now we can filter by state_code
-    Enum.filter(complete_list, fn {_, state, _} -> state == state_code end)
-    # each element of the list is a 3-tuple; convert each 3-tuple to a keyword list, where
-    # the keys are :station_id, :state, :name
-    |> Enum.map(fn {station_id, state, name} ->
-      [
-        {String.to_atom("station_id"), station_id},
-        {String.to_atom("state"), state},
-        {String.to_atom("name"), name}
-      ]
-    end)
+    filtered_list = Enum.filter(complete_list, fn {_, state, _} -> state == state_code end)
+
+    # if an invalid state_code is given, the list will be empty, so we can check for
+    # that and return an error message; otherwise, we get a list of 3-tuples, where
+    # each 3-tuple is a station_id, a state and a name, and we'll convert each 3-tuple
+    # to a keyword list, where the keys are :station_id, :state, :name
+    if Enum.empty?(filtered_list) do
+      IO.puts(
+        "State code: #{state_code} doesn't matches any of the National Weather Service's states"
+      )
+
+      System.halt(3)
+    else
+      Enum.map(filtered_list, fn {station_id, state, name} ->
+        [
+          {String.to_atom("station_id"), station_id},
+          {String.to_atom("state"), state},
+          {String.to_atom("name"), name}
+        ]
+      end)
+    end
   end
 
   def extract_weather_report(xml) do

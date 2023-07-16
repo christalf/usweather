@@ -3,16 +3,12 @@ defmodule Usweather.Formatter do
   Handles the formatting of the weather information returned by the US National Weather Service (https://www.weather.gov/documentation/services-web-api)
   """
   @doc """
-  Uses TableRex.quick_render!() to generate a table showing the weather information or
-  the available weather stations for the given state.
+  `nws_info` must be a keyword list (not a list of keyword lists), where the keys are atoms representing the names of the tags (i.e., :location, :station_id, :observation_time, :weather, temperature_string, :relative_humidity, :wind_string, :pressure_string, :dewpoint_string and :visibility_mi), and the values are the text of the tags.
+  `rows` must be a list of strings representing the names of those same tags.
+  This function uses TableRex.quick_render!() to generate a table showing the latest weather
+  information for the state_code originally given in the command line.
   """
   def print_table_for_rows(nws_info, rows) when not is_list(hd(nws_info)) do
-    # `nws_info` is not a list of keyword lists, means that it is a keyword list where
-    # the keys are atoms representing the names of the tags (i.e., :location, :station_id,
-    # :observation_time, :weather, temperature_string, :relative_humidity, :wind_string,
-    # :pressure_string, :dewpoint_string and :visibility_mi ), and the values are the text
-    # of the tags.
-    # `rows` is a list of strings representing the names of the tags.
     table_title = "Weather information for station_id #{nws_info[:station_id]}"
     col_titles = ["Item", "Information"]
 
@@ -36,9 +32,14 @@ defmodule Usweather.Formatter do
     |> IO.puts()
   end
 
+  @doc """
+  `nws_info` must be a list of keyword lists, where each keyword list has the keys
+  :station_id, :state and :name, and the values are the text of the tags.
+  `columns` must be a list of strings representing the names of those same tags.
+  This function uses TableRex.quick_render!() to generate a table showing the list of
+  all the available station_ids in the given state_code originally given in the command line.
+  """
   def print_table_for_columns(nws_info, columns) when is_list(hd(nws_info)) do
-    # `nws_info` is a list of keyword lists, where each keyword list has the keys
-    # :station_id, :state, :name.
     table_title = "Available weather stations for required state"
 
     # match columns in a col_titles variable

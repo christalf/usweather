@@ -26,6 +26,16 @@ defmodule Usweather.CLI do
     |> args_to_internal_representation()
   end
 
+  @doc """
+  Recieves a tuple of three elements:
+  . a keyword list of the options (switches and aliases),
+  . a list of the remaining arguments,
+  . a list of errors.
+  Returns:
+  . a station_id string, or
+  . a tuple `{:help, state_code}` if -h or --help followed by state_code was given, or
+  . :badcmd if the command was not recognized.
+  """
   def args_to_internal_representation({[help: true], state_code, []})
       when length(state_code) == 1 do
     {:help, state_code |> Enum.join() |> String.upcase()}
@@ -39,13 +49,19 @@ defmodule Usweather.CLI do
 
   def args_to_internal_representation(_), do: :badcmd
 
+  @doc """
+  If a tuple `{:help, state_code}` is given as input, it fetches the list of
+  all the available station_ids in the given state_code and prints it in a table.
+  If a station_id string is given as input, it fetches the latest weather
+  information for the given station_id and prints it in a table.
+  Bad commands are handled by displaying a usage message and halting the program.
+  """
   def process(:badcmd) do
     IO.puts("\nusage: usweather <station_id> or usweather -h <state_code>\n")
     System.halt(0)
   end
 
   def process({:help, state_code}) do
-    # fetch the list of all the available station_ids in the given state_code
     Usweather.NWS.fetch({:index, state_code})
     # if a successful response is given by the National Weather Service, the fetch
     # function parses it and returns a list of keyword lists, where each keyword list
@@ -55,13 +71,12 @@ defmodule Usweather.CLI do
   end
 
   def process(station_id) do
-    # fetch the weather information for the given station_id
     Usweather.NWS.fetch(station_id)
     # if a successful response is given by the National Weather Service, the fetch
-    # function parses it and returns a keyword list, where the keys are the names of
-    # the tags (i.e., :location, :station_id, :observation_time, :weather,
-    # temperature_string, :relative_humidity, :wind_string, :pressure_string,
-    # :dewpoint_string and :visibility_mi ), and the values are the text of the tags.
+    # function parses it and returns a keyword list, where the keys are atoms
+    # representing the names of the xml tags (i.e., :location, :station_id, :observation_time,
+    # :weather, temperature_string, :relative_humidity, :wind_string, :pressure_string,
+    # :dewpoint_string and :visibility_mi), and the values are the text of the tags.
     # The Formatter module prints the keyword list in a table.
     |> Usweather.Formatter.print_table_for_rows([
       "location",

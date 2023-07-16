@@ -8,6 +8,7 @@ defmodule Usweather.MixProject do
       version: "0.1.0",
       name: "USweather",
       source_url: "https://github.com/christalf/usweather",
+      description: "A command line tool to get weather information for US cities",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       deps: deps()
